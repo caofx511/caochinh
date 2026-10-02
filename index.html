@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>THIÊN NGƯU BAY QUA BIỂN</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+            touch-action: manipulation;
+            user-select: none;
+            background-color: #020617;
+            color: #ffffff;
+            margin: 0;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-2 bg-slate-950">
+
+    <div class="relative w-full max-w-lg flex flex-col items-center">
+        <!-- Header -->
+        <header class="text-center mb-2 z-10 w-full">
+            <h1 class="text-2xl sm:text-3xl font-black text-amber-400 tracking-wider uppercase drop-shadow-md">
+                THIÊN NGƯU BAY QUA BIỂN
+            </h1>
+            <p class="text-xs sm:text-sm text-cyan-200 font-bold">
+                Chạm để đập cánh • Bay qua các đảo • Bảng xếp hạng Online!
+            </p>
+        </header>
+
+        <!-- Canvas Game -->
+        <div class="relative w-full flex justify-center items-center overflow-hidden rounded-2xl border-4 border-amber-500/70 shadow-2xl bg-sky-950 aspect-[3/4]">
+            <canvas id="gameCanvas" class="w-full h-full cursor-pointer"></canvas>
+
+            <!-- Màn Hình Bắt Đầu & Đăng Ký Nickname -->
+            <div id="startScreen" class="absolute inset-0 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center z-20">
+                <div class="w-20 h-20 mb-3 relative flex items-center justify-center bg-amber-500/20 rounded-full border-2 border-amber-400 shadow-lg">
+                    <span class="text-5xl">🐃</span>
+                </div>
+                <h2 class="text-2xl font-black text-amber-300 mb-2 uppercase">
+                    THIÊN NGƯU BAY BIỂN
+                </h2>
+                
+                <!-- Ô Nhập / Đăng Ký Nickname -->
+                <div class="w-full max-w-xs mb-4">
+                    <label class="block text-xs font-bold text-cyan-300 mb-1 text-left">ĐĂNG KÝ NICKNAME CỦA BẠN:</label>
+                    <input type="text" id="nicknameInput" maxlength="12" placeholder="Nhập nickname..." 
+                           class="w-full px-4 py-2 bg-slate-900 border-2 border-amber-500/80 rounded-xl text-white font-bold text-center focus:outline-none focus:border-yellow-300">
+                </div>
+
+                <button id="startBtn" class="px-8 py-3 bg-gradient-to-r from-red-600 to-amber-500 text-white font-black text-base rounded-full shadow-lg border-2 border-yellow-300 transform transition active:scale-95">
+                    BẮT ĐẦU BAY (TAP / SPACE)
+                </button>
+            </div>
+
+            <!-- Màn Hình Thua & Bảng Xếp Hạng Online Theo Nickname -->
+            <div id="gameOverScreen" class="hidden absolute inset-0 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-4 text-center z-30">
+                <div class="w-full max-w-sm bg-slate-900 border-2 border-amber-500/80 rounded-2xl p-5 shadow-2xl">
+                    <h2 class="text-xl font-black text-red-500 mb-1 uppercase tracking-wide">
+                        KẾT THÚC HÀNH TRÌNH
+                    </h2>
+                    
+                    <div class="grid grid-cols-2 gap-2 my-3">
+                        <div class="bg-slate-800 p-2.5 rounded-xl border border-amber-500/30">
+                            <p class="text-[10px] text-gray-400 font-bold uppercase">Điểm Lần Bay</p>
+                            <span id="finalScore" class="text-2xl font-black text-amber-400">0</span>
+                        </div>
+                        <div class="bg-slate-800 p-2.5 rounded-xl border border-yellow-500/30">
+                            <p class="text-[10px] text-gray-400 font-bold uppercase">Kỷ Lục Cá Nhân</p>
+                            <span id="bestScore" class="text-2xl font-black text-yellow-300">0</span>
+                        </div>
+                    </div>
+
+                    <!-- Bảng Xếp Hạng Đám Mây Theo Nickname -->
+                    <div class="bg-slate-950/60 p-3 rounded-xl border border-cyan-500/30 mb-4">
+                        <h3 class="text-xs font-black text-cyan-300 uppercase mb-2 flex items-center justify-center gap-1">
+                            🏆 BẢNG XẾP HẠNG TOP 5 ONLINE 🏆
+                        </h3>
+                        <ul id="leaderboardList" class="text-xs space-y-1 text-gray-300 text-left px-2">
+                            <li class="text-center text-gray-400">Đang tải xếp hạng...</li>
+                        </ul>
+                    </div>
+
+                    <button id="restartBtn" class="w-full py-3 bg-gradient-to-r from-amber-500 to-red-600 text-white font-black text-sm rounded-full border border-yellow-300 shadow-lg transform transition active:scale-95">
+                        BAY LẠI
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <footer class="mt-3 text-xs text-cyan-300/80">
+            👉 Nhấn liên tục để giữ Thiên Ngưu bay qua các đảo!
+        </footer>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <script>
+        // KẾT NỐI FIREBASE DATABASE (LƯU VÀ TẢI BẢNG XẾP HẠNG ONLINE)
+        const firebaseConfig = {
+            databaseURL: "https://thien-nguu-default-rtdb.asia-southeast1.firebasedatabase.app"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const V_WIDTH = 480;
+        const V_HEIGHT = 640;
+        canvas.width = V_WIDTH;
+        canvas.height = V_HEIGHT;
+
+        // Tự động khôi phục Nickname nếu từng đăng ký trước đây
+        let playerNickname = localStorage.getItem('thiennguu_nickname') || '';
+        if (playerNickname) {
+            document.getElementById('nicknameInput').value = playerNickname;
+        }
+
+        // ----------------------------------------------------
+        // HỆ THỐNG ÂM THANH & NHẠC NỀN LIÊN TỤC (PRECISE SCHEDULER)
+        // ----------------------------------------------------
+        let audioCtx = null;
+        let isBgmPlaying = false;
+        let nextNoteTime = 0;
+        let currentNoteIndex = 0;
+        let bgmIntervalId = null;
+
+        // Chuỗi giai điệu: Đa - đa - đà - đa - đá - đa - đà - đa - đa
+        const melody = [
+            { freq: 523.25, duration: 0.20 }, // Đa (C5)
+            { freq: 523.25, duration: 0.20 }, // đa (C5)
+            { freq: 440.00, duration: 0.25 }, // đà (A4)
+            { freq: 523.25, duration: 0.20 }, // đa (C5)
+            { freq: 659.25, duration: 0.30 }, // đá (E5)
+            { freq: 523.25, duration: 0.20 }, // đa (C5)
+            { freq: 440.00, duration: 0.25 }, // đà (A4)
+            { freq: 523.25, duration: 0.20 }, // đa (C5)
+            { freq: 523.25, duration: 0.40 }  // đa (C5)
+        ];
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playFlapSound() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.12);
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.12);
+        }
+
+        function playScoreSound() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
+            osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.08);
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.25);
+        }
+
+        function playHitSound() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(120, audioCtx.currentTime);
+            osc.frequency.linearRampToValueAtTime(30, audioCtx.currentTime + 0.3);
+            gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.3);
+        }
+
+        // Phát nốt đơn chính xác theo thời điểm chỉ định
+        function scheduleNote(note, time) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(note.freq, time);
+            
+            gain.gain.setValueAtTime(0.12, time);
+            gain.gain.exponentialRampToValueAtTime(0.001, time + note.duration);
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.start(time);
+            osc.stop(time + note.duration);
+        }
+
+        // Lập lịch phát trước các nốt tiếp theo để âm thanh không bao giờ bị trễ
+        function scheduler() {
+            while (nextNoteTime < audioCtx.currentTime + 0.1) {
+                scheduleNote(melody[currentNoteIndex], nextNoteTime);
+                nextNoteTime += melody[currentNoteIndex].duration + 0.05; // Khoảng nghỉ nhỏ giữa các nốt
+                currentNoteIndex = (currentNoteIndex + 1) % melody.length; // Lặp lại liên tục
+            }
+        }
+
+        function startBGM() {
+            if (isBgmPlaying) return;
+            isBgmPlaying = true;
+            currentNoteIndex = 0;
+            nextNoteTime = audioCtx.currentTime + 0.05;
+            bgmIntervalId = setInterval(scheduler, 25);
+        }
+
+        function stopBGM() {
+            isBgmPlaying = false;
+            if (bgmIntervalId) {
+                clearInterval(bgmIntervalId);
+                bgmIntervalId = null;
+            }
+        }
+
+        // ----------------------------------------------------
+        // DỮ LIỆU ĐẢO & GAMEPLAY
+        // ----------------------------------------------------
+        const ISLAND_DATA = [
+            { name: "Đảo Hoàng Sa", group: "Q.đáo Hoàng Sa" },
+            { name: "Đảo Phú Lâm", group: "Q.đáo Hoàng Sa" },
+            { name: "Đảo Song Tử Tây", group: "Q.đáo Trường Sa" },
+            { name: "Đảo Nam Yết", group: "Q.đáo Trường Sa" },
+            { name: "Đảo Sơn Ca", group: "Q.đáo Trường Sa" },
+            { name: "Đảo Sinh Tồn", group: "Q.đáo Trường Sa" },
+            { name: "Đá Chữ Thập", group: "Q.đáo Trường Sa" },
+            { name: "Đá Subi", group: "Q.đáo Trường Sa" },
+            { name: "Đá Vành Khăn", group: "Q.đáo Trường Sa" },
+            { name: "Đảo Trường Sa Lớn", group: "Q.đáo Trường Sa" },
+            { name: "Đảo An Bang", group: "Q.đáo Trường Sa" },
+            { name: "Đá Thuyền Chài", group: "Q.đáo Trường Sa" }
+        ];
+
+        let gameState = 'START';
+        let score = 0;
+        let pipes = [];
+        let frameCount = 0;
+        let waveOffset = 0;
+
+        const thienNguuSVG = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+            <g>
+                <path d="M 120 420 C 150 380, 200 370, 240 390 C 270 340, 340 330, 390 370 C 420 380, 440 410, 420 430 C 350 450, 200 450, 120 420 Z" fill="#d97706" stroke="#fef08a" stroke-width="3"/>
+                <path d="M 160 400 C 190 360, 250 360, 280 390 C 310 350, 360 350, 390 390 C 330 420, 210 420, 160 400 Z" fill="#f59e0b"/>
+                <path d="M 110 330 Q 80 280 100 210 Q 150 170 230 180 L 290 280 Q 250 370 190 340 Z" fill="#0f172a"/>
+                <path d="M 110 330 C 120 360, 140 400, 150 420 L 170 410 C 160 380, 140 350, 130 320 Z" fill="#1e293b"/>
+                <path d="M 170 330 C 180 360, 200 400, 210 420 L 230 410 C 220 380, 200 350, 190 320 Z" fill="#0f172a"/>
+                <path d="M 280 270 C 310 300, 350 330, 380 340 L 390 320 C 360 300, 330 270, 300 240 Z" fill="#1e293b"/>
+                <path d="M 320 230 C 350 250, 410 270, 430 260 L 430 240 C 400 240, 360 220, 330 200 Z" fill="#0f172a"/>
+                <path d="M 100 210 C 70 200, 50 230, 70 260 C 80 280, 60 300, 50 280 C 40 250, 70 180, 110 190 Z" fill="#0f172a"/>
+                <path d="M 170 180 C 130 110, 180 40, 260 50 C 220 100, 200 140, 190 180 Z" fill="#d97706" stroke="#fef08a" stroke-width="2"/>
+                <path d="M 190 170 C 150 110, 210 50, 290 60 C 250 110, 230 140, 210 170 Z" fill="#b45309"/>
+                <path d="M 180 180 C 110 80, 190 20, 300 30 C 310 35, 270 70, 260 90 C 280 90, 320 50, 340 60 C 310 90, 280 110, 280 120 C 300 110, 350 80, 370 90 C 330 120, 270 150, 230 180 Z" fill="#f59e0b" stroke="#fde047" stroke-width="3"/>
+                <path d="M 200 160 Q 230 100 280 80 M 210 170 Q 250 120 310 100 M 220 175 Q 270 130 340 120" stroke="#fef08a" stroke-width="2" fill="none"/>
+                <path d="M 250 170 C 280 140, 320 110, 360 110 C 390 110, 410 130, 400 150 C 370 170, 310 200, 270 190 Z" fill="#0f172a"/>
+                <path d="M 330 120 C 320 80, 280 60, 240 65 C 270 75, 300 85, 320 110 Z" fill="#0f172a" stroke="#f59e0b" stroke-width="2"/>
+                <path d="M 340 115 C 340 70, 300 40, 250 45 C 290 55, 320 70, 335 105 Z" fill="#1e293b" stroke="#fde047" stroke-width="2"/>
+                <ellipse cx="370" cy="135" rx="8" ry="5" fill="#ef4444"/>
+                <ellipse cx="371" cy="135" rx="4" ry="2" fill="#fde047"/>
+                <circle cx="280" cy="190" r="22" fill="#d97706" stroke="#fde047" stroke-width="3"/>
+                <circle cx="280" cy="190" r="15" fill="none" stroke="#fde047" stroke-width="2" stroke-dasharray="4,3"/>
+                <circle cx="280" cy="190" r="6" fill="#fde047"/>
+            </g>
+        </svg>`;
+
+        const buffaloImg = new Image();
+        buffaloImg.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(thienNguuSVG);
+
+        class Buffalo {
+            constructor() { this.reset(); }
+            reset() {
+                this.x = 100;
+                this.y = V_HEIGHT / 2;
+                this.velocity = 0;
+                this.gravity = 0.42;
+                this.jumpPower = -7.5;
+                this.width = 65;
+                this.height = 65;
+                this.rotation = 0;
+            }
+            flap() {
+                this.velocity = this.jumpPower;
+                playFlapSound();
+            }
+            update() {
+                this.velocity += this.gravity;
+                this.y += this.velocity;
+                this.rotation = Math.min(Math.PI / 4, Math.max(-Math.PI / 6, this.velocity * 0.08));
+                if (this.y + this.height / 2 >= V_HEIGHT - 35 || this.y - this.height / 2 <= 0) {
+                    endGame();
+                }
+            }
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
+                ctx.drawImage(buffaloImg, -this.width / 2, -this.height / 2, this.width, this.height);
+                ctx.restore();
+            }
+        }
+
+        class Pipe {
+            constructor(x) {
+                this.x = x;
+                this.width = 110;
+                this.gap = 160;
+                this.topHeight = Math.floor(Math.random() * (V_HEIGHT - this.gap - 220)) + 50;
+                this.bottomY = this.topHeight + this.gap;
+                this.passed = false;
+                
+                const randomIsland = ISLAND_DATA[Math.floor(Math.random() * ISLAND_DATA.length)];
+                this.name = randomIsland.name;
+                this.group = randomIsland.group;
+            }
+            update() { this.x -= 2.5; }
+            draw() {
+                ctx.fillStyle = '#0369a1';
+                ctx.fillRect(this.x + 15, 0, this.width - 30, this.topHeight);
+                ctx.fillStyle = '#0284c7';
+                ctx.fillRect(this.x + 10, this.topHeight - 15, this.width - 20, 15);
+
+                const islandX = this.x;
+                const islandY = this.bottomY;
+                const islandW = this.width;
+
+                ctx.fillStyle = '#0f766e';
+                ctx.beginPath();
+                ctx.moveTo(islandX - 10, V_HEIGHT);
+                ctx.lineTo(islandX, islandY + 20);
+                ctx.lineTo(islandX + 15, islandY);
+                ctx.lineTo(islandX + islandW - 15, islandY);
+                ctx.lineTo(islandX + islandW, islandY + 20);
+                ctx.lineTo(islandX + islandW + 10, V_HEIGHT);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.fillStyle = '#16a34a';
+                ctx.beginPath();
+                ctx.ellipse(islandX + islandW / 2, islandY + 4, islandW / 2 - 5, 10, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 11px Montserrat, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(this.name, islandX + islandW / 2, islandY + 32);
+
+                ctx.fillStyle = '#fde047';
+                ctx.font = 'bold 9px Montserrat, sans-serif';
+                ctx.fillText(this.group, islandX + islandW / 2, islandY + 46);
+
+                ctx.fillStyle = '#ef4444';
+                ctx.fillRect(islandX + 10, islandY + 54, islandW - 20, 16);
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 9px Montserrat, sans-serif';
+                ctx.fillText('THUỘC VIỆT NAM', islandX + islandW / 2, islandY + 66);
+
+                const fx = islandX + islandW / 2;
+                const fy = islandY - 6;
+
+                ctx.strokeStyle = '#e2e8f0';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(fx, fy);
+                ctx.lineTo(fx, fy - 32);
+                ctx.stroke();
+
+                ctx.fillStyle = '#da251d';
+                ctx.fillRect(fx, fy - 32, 22, 14);
+
+                ctx.fillStyle = '#ffff00';
+                ctx.font = '10px sans-serif';
+                ctx.fillText('★', fx + 11, fy - 21);
+            }
+        }
+
+        const buffalo = new Buffalo();
+
+        function drawEastSeaBackground() {
+            const bgGradient = ctx.createLinearGradient(0, 0, 0, V_HEIGHT);
+            bgGradient.addColorStop(0, '#0c4a6e');
+            bgGradient.addColorStop(0.6, '#075985');
+            bgGradient.addColorStop(1, '#0284c7');
+            ctx.fillStyle = bgGradient;
+            ctx.fillRect(0, 0, V_WIDTH, V_HEIGHT);
+
+            ctx.fillStyle = 'rgba(22, 101, 52, 0.35)';
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.bezierCurveTo(80, 120, 20, 280, 100, 420);
+            ctx.bezierCurveTo(120, 480, 60, 560, 0, V_HEIGHT);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.strokeStyle = 'rgba(250, 204, 21, 0.4)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // ĐOẠN CODE CHỮ MỜ ĐÃ ĐƯỢC XÓA TẠI ĐÂY
+
+            // ĐOẠN CODE ĐƯỜNG CHỦ QUYỀN ĐÃ ĐƯỢC XÓA TẠI ĐÂY
+
+            waveOffset += 0.05;
+            ctx.fillStyle = '#0369a1';
+            ctx.beginPath();
+            ctx.moveTo(0, V_HEIGHT - 35);
+            for (let x = 0; x <= V_WIDTH; x += 10) {
+                const y = Math.sin(x * 0.02 + waveOffset) * 6 + (V_HEIGHT - 35);
+                ctx.lineTo(x, y);
+            }
+            ctx.lineTo(V_WIDTH, V_HEIGHT);
+            ctx.lineTo(0, V_HEIGHT);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.beginPath();
+            ctx.moveTo(0, V_HEIGHT - 32);
+            for (let x = 0; x <= V_WIDTH; x += 15) {
+                const y = Math.sin(x * 0.03 + waveOffset * 1.2) * 4 + (V_HEIGHT - 32);
+                ctx.lineTo(x, y);
+            }
+            ctx.lineTo(V_WIDTH, V_HEIGHT);
+            ctx.lineTo(0, V_HEIGHT);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function saveOnlineScore(nickname, currentScore) {
+            let userBest = parseInt(localStorage.getItem('thiennguu_best') || '0');
+            if (currentScore > userBest) {
+                userBest = currentScore;
+                localStorage.setItem('thiennguu_best', userBest.toString());
+            }
+            document.getElementById('bestScore').innerText = userBest;
+
+            if (nickname && currentScore > 0) {
+                database.ref('scores/' + nickname).transaction((currentData) => {
+                    if (!currentData || currentScore > currentData.score) {
+                        return { name: nickname, score: currentScore, time: Date.now() };
+                    }
+                    return currentData;
+                });
+            }
+        }
+
+        function loadOnlineLeaderboard() {
+            const listEl = document.getElementById('leaderboardList');
+            
+            database.ref('scores').orderByChild('score').limitToLast(5).on('value', (snapshot) => {
+                let scores = [];
+                snapshot.forEach((child) => {
+                    scores.push(child.val());
+                });
+                
+                scores.reverse();
+
+                listEl.innerHTML = '';
+                if (scores.length === 0) {
+                    listEl.innerHTML = '<li class="text-center text-gray-400">Chưa có kỷ lục nào</li>';
+                    return;
+                }
+
+                const medals = ['🥇', '🥈', '🥉', '4.', '5.'];
+                scores.forEach((item, idx) => {
+                    const isCurrentPlayer = item.name === playerNickname;
+                    listEl.innerHTML += `
+                        <li class="flex justify-between items-center py-1 border-b border-gray-800 ${isCurrentPlayer ? 'text-amber-300 font-bold' : ''}">
+                            <span class="truncate max-w-[140px]">${medals[idx]} ${item.name}</span>
+                            <span class="font-black text-cyan-300">${item.score} đảo</span>
+                        </li>
+                    `;
+                });
+            });
+        }
+
+        function endGame() {
+            gameState = 'GAMEOVER';
+            stopBGM();
+            playHitSound();
+
+            document.getElementById('finalScore').innerText = score;
+            saveOnlineScore(playerNickname, score);
+            loadOnlineLeaderboard();
+
+            document.getElementById('gameOverScreen').classList.remove('hidden');
+        }
+
+        function gameLoop() {
+            drawEastSeaBackground();
+
+            if (gameState === 'PLAYING') {
+                frameCount++;
+                if (frameCount % 100 === 0) pipes.push(new Pipe(V_WIDTH));
+
+                buffalo.update();
+
+                for (let i = pipes.length - 1; i >= 0; i--) {
+                    pipes[i].update();
+
+                    if (
+                        buffalo.x + buffalo.width / 3 > pipes[i].x &&
+                        buffalo.x - buffalo.width / 3 < pipes[i].x + pipes[i].width
+                    ) {
+                        if (
+                            buffalo.y - buffalo.height / 3 < pipes[i].topHeight ||
+                            buffalo.y + buffalo.height / 3 > pipes[i].bottomY
+                        ) {
+                            endGame();
+                        }
+                    }
+
+                    if (!pipes[i].passed && pipes[i].x + pipes[i].width < buffalo.x) {
+                        pipes[i].passed = true;
+                        score++;
+                        playScoreSound();
+                    }
+
+                    if (pipes[i].x + pipes[i].width < -20) {
+                        pipes.splice(i, 1);
+                    }
+                }
+
+                pipes.forEach(pipe => pipe.draw());
+
+                // CODE VẼ DẤU TRÒN ĐỎ ĐÃ ĐƯỢC XÓA TẠI ĐÂY
+
+                buffalo.draw();
+
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 32px Montserrat, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(score, V_WIDTH / 2, 50);
+
+            } else if (gameState === 'START') {
+                buffalo.draw();
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function handleTap() {
+            initAudio();
+            if (gameState === 'PLAYING') {
+                buffalo.flap();
+            }
+        }
+
+        function startGame() {
+            const inputVal = document.getElementById('nicknameInput').value.trim();
+            if (!inputVal) {
+                alert("Vui lòng đăng ký/nhập Nickname của bạn để bắt đầu!");
+                return;
+            }
+
+            playerNickname = inputVal;
+            localStorage.setItem('thiennguu_nickname', playerNickname);
+
+            initAudio();
+            buffalo.reset();
+            pipes = [];
+            score = 0;
+            frameCount = 0;
+            gameState = 'PLAYING';
+            startBGM();
+
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('gameOverScreen').classList.add('hidden');
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                if (gameState === 'PLAYING') handleTap();
+                else if (gameState === 'START' || gameState === 'GAMEOVER') startGame();
+            }
+        });
+
+        canvas.addEventListener('mousedown', handleTap);
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            handleTap();
+        });
+
+        document.getElementById('startBtn').addEventListener('click', startGame);
+        document.getElementById('restartBtn').addEventListener('click', startGame);
+
+        window.onload = () => {
+            let userBest = localStorage.getItem('thiennguu_best') || '0';
+            document.getElementById('bestScore').innerText = userBest;
+            gameLoop();
+        };
+    </script>
+</body>
+</html>
